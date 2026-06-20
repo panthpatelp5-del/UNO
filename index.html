@@ -10,25 +10,39 @@
     <style>
         :root {
             --bg-gradient: radial-gradient(circle at 50% 40%, #06305a 0%, #001224 100%);
+            /* Classic Light Side Colors */
             --card-red: #ff3b30;
             --card-blue: #007aff;
             --card-yellow: #ffcc00;
             --card-green: #34c759;
+            /* Flip Dark Side Colors */
+            --card-teal: #00e5ff;
+            --card-pink: #ff2a85;
+            --card-orange: #ff8c00;
+            --card-purple: #8a2be2;
+            
             --card-dark: #111;
             --glow-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
             --transition-smooth: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             --font-main: 'Poppins', sans-serif;
         }
 
+        /* DARK MODE DYNAMIC OVERRIDES */
+        body.dark-side-active {
+            --bg-gradient: radial-gradient(circle at 50% 40%, #2b003a 0%, #05000a 100%);
+            --card-dark: #000;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: var(--font-main); }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: var(--bg-gradient); color: #fff; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: var(--bg-gradient); color: #fff; transition: background 0.8s ease; }
 
         /* SCREEN MANAGEMENT & UI */
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, transform 0.5s ease; z-index: 10; }
         .hidden { opacity: 0; pointer-events: none; transform: scale(0.95); z-index: 0; }
         
-        .glass-panel { background: rgba(0, 15, 30, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.05); text-align: center; max-width: 450px; width: 90%; }
-        
+        .glass-panel { background: rgba(0, 15, 30, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.05); text-align: center; max-width: 450px; width: 90%; transition: all 0.5s ease; }
+        body.dark-side-active .glass-panel { background: rgba(30, 0, 40, 0.6); border-color: rgba(255, 42, 133, 0.2); }
+
         h1 { font-size: 3.2rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 30px; background: linear-gradient(135deg, #ff3b30, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         .btn { background: linear-gradient(135deg, #007aff 0%, #0051a8 100%); border: none; color: white; padding: 16px 32px; font-size: 1.1rem; font-weight: 800; border-radius: 14px; cursor: pointer; transition: var(--transition-smooth); box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3); width: 100%; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
@@ -40,8 +54,10 @@
         .series-grid { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; }
         .series-card { background: rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; cursor: pointer; transition: var(--transition-smooth); position: relative; overflow: hidden; }
         .series-card:hover { border-color: var(--card-yellow); transform: scale(1.03); box-shadow: 0 10px 30px rgba(255,204,0,0.2); }
-        .series-card.locked { opacity: 0.5; cursor: not-allowed; }
+        .series-card.flip-edition:hover { border-color: var(--card-pink); box-shadow: 0 10px 30px rgba(255,42,133,0.3); }
+        
         .badge { position: absolute; top: 10px; right: 10px; background: #ff3b30; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; font-weight: bold; }
+        .badge.active-badge { background: var(--card-pink); }
 
         .code-display { font-size: 3rem; font-weight: 900; letter-spacing: 10px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px dashed rgba(255,255,255,0.2); color: var(--card-yellow); text-shadow: 0 0 20px rgba(255,204,0,0.5); }
         .input-code { width: 100%; padding: 16px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.5); color: white; font-size: 2rem; font-weight: 800; text-align: center; letter-spacing: 6px; margin-bottom: 20px; outline: none; transition: var(--transition-smooth); }
@@ -60,79 +76,109 @@
         
         .player-info { font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; opacity: 0.5; text-align: center; margin: 10px 0; transition: all 0.3s ease; }
         .player-info.active-turn { opacity: 1; color: var(--card-yellow); text-shadow: 0 0 20px rgba(255, 204, 0, 1); transform: scale(1.1); }
+        body.dark-side-active .player-info.active-turn { color: var(--card-teal); text-shadow: 0 0 20px var(--card-teal); }
 
-        .card-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 200px; position: relative; }
+        .card-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 220px; position: relative; }
         
-        /* FAN HAND LAYOUT */
-        .hand { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 900px; height: 100%; position: relative; transform-style: preserve-3d; }
+        /* UPGRADED HAND LAYOUT */
+        .hand { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: relative; transform-style: preserve-3d; }
         
-        .uno-card { width: 110px; height: 165px; border-radius: 14px; background: #000; border: 4px solid #fff; position: absolute; box-shadow: -5px 10px 20px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease; cursor: pointer; transform-origin: bottom center; }
-        .uno-card.valid-highlight { box-shadow: 0 0 30px var(--card-yellow); border-color: var(--card-yellow); z-index: 50 !important; transform: translateY(-20px) scale(1.05); }
-        .hand.interactive .uno-card:hover { transform: translateY(-40px) scale(1.15) !important; z-index: 100 !important; box-shadow: 0 20px 45px rgba(0,0,0,0.7); border-color: var(--card-yellow); }
+        .uno-card { width: 110px; height: 165px; border-radius: 14px; background: var(--card-dark); border: 4px solid #fff; position: absolute; box-shadow: -5px 10px 20px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease, filter 0.3s ease; cursor: pointer; transform-origin: center center; }
+        
+        body.dark-side-active .uno-card { border-color: #222; }
+        
+        .uno-card.valid-highlight { box-shadow: 0 0 30px var(--card-yellow); border-color: var(--card-yellow); z-index: 50 !important; }
+        .hand.interactive .uno-card:hover { z-index: 100 !important; box-shadow: 0 20px 45px rgba(0,0,0,0.7); border-color: var(--card-yellow); }
+        body.dark-side-active .hand.interactive .uno-card:hover { border-color: var(--card-pink); box-shadow: 0 20px 45px rgba(255,42,133,0.5); }
 
         .card-inner { position: absolute; top: 5%; left: 5%; right: 5%; bottom: 5%; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .card-diamond { width: 85%; height: 65%; background: #fff; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 15px rgba(0,0,0,0.2); border-radius: 8px; }
+        .card-diamond { width: 85%; height: 65%; background: #fff; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 15px rgba(0,0,0,0.2); border-radius: 8px; transition: background 0.4s ease; }
+        body.dark-side-active .card-diamond { background: #222; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+        
         .card-value { transform: rotate(-45deg); font-size: 3rem; font-weight: 900; color: inherit; text-shadow: -2px 2px 0px rgba(0,0,0,0.1); }
         .card-corner { position: absolute; font-size: 1.1rem; font-weight: 900; text-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
         .card-corner.top-left { top: 6px; left: 10px; }
         .card-corner.bottom-right { bottom: 6px; right: 10px; transform: rotate(180deg); }
 
-        .red { background: var(--card-red); color: var(--card-red); box-shadow: inset 0 0 20px rgba(0,0,0,0.3), -5px 10px 20px rgba(0,0,0,0.5); }
-        .blue { background: var(--card-blue); color: var(--card-blue); box-shadow: inset 0 0 20px rgba(0,0,0,0.3), -5px 10px 20px rgba(0,0,0,0.5); }
-        .yellow { background: var(--card-yellow); color: var(--card-yellow); box-shadow: inset 0 0 20px rgba(0,0,0,0.3), -5px 10px 20px rgba(0,0,0,0.5); }
-        .green { background: var(--card-green); color: var(--card-green); box-shadow: inset 0 0 20px rgba(0,0,0,0.3), -5px 10px 20px rgba(0,0,0,0.5); }
+        /* Color Classes */
+        .red { background: var(--card-red); color: var(--card-red); }
+        .blue { background: var(--card-blue); color: var(--card-blue); }
+        .yellow { background: var(--card-yellow); color: var(--card-yellow); }
+        .green { background: var(--card-green); color: var(--card-green); }
+        
+        .teal { background: var(--card-teal); color: var(--card-teal); }
+        .pink { background: var(--card-pink); color: var(--card-pink); }
+        .orange { background: var(--card-orange); color: var(--card-orange); }
+        .purple { background: var(--card-purple); color: var(--card-purple); }
+        
         .wild { background: var(--card-dark); color: #fff; }
 
         .wild-inner { width: 85%; height: 65%; transform: rotate(45deg); display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; overflow: hidden; border-radius: 8px; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
-        .w-quad { width: 100%; height: 100%; }
-
+        .w-quad { width: 100%; height: 100%; transition: background 0.4s ease; }
+        
         /* OPPONENT CARD STYLING */
         .opponent-card { background: var(--card-dark); border: 4px solid #fff; cursor: default; }
-        .opponent-card .uno-logo { font-size: 2rem; font-weight: 900; color: var(--card-red); text-shadow: 2px 2px 0 #fff; transform: rotate(-20deg); }
-        .opponent-card::after { content: ''; position: absolute; top: 6%; left: 6%; right: 6%; bottom: 6%; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: radial-gradient(circle, #ff3b30 0%, #660000 100%); z-index: -1; }
+        body.dark-side-active .opponent-card { border-color: #222; }
+        .opponent-card .uno-logo { font-size: 2rem; font-weight: 900; color: var(--card-red); text-shadow: 2px 2px 0 #fff; transform: rotate(-20deg); transition: all 0.4s ease; }
+        body.dark-side-active .opponent-card .uno-logo { color: var(--card-orange); text-shadow: 2px 2px 0 #222; }
+        .opponent-card::after { content: ''; position: absolute; top: 6%; left: 6%; right: 6%; bottom: 6%; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: radial-gradient(circle, #ff3b30 0%, #660000 100%); z-index: -1; transition: all 0.4s ease; }
+        body.dark-side-active .opponent-card::after { border-color: rgba(0,0,0,0.5); background: radial-gradient(circle, #ff8c00 0%, #663300 100%); }
 
         /* CENTER AREA */
         .center-deck-area { display: flex; align-items: center; justify-content: center; gap: 60px; width: 100%; height: 260px; position: relative; }
         
         .deck-pile { width: 120px; height: 180px; background: var(--card-dark); border: 4px solid #fff; border-radius: 14px; box-shadow: -4px 4px 0 #222, -8px 8px 0 #111, -12px 12px 0 #000, -20px 20px 40px rgba(0,0,0,0.8); cursor: pointer; position: relative; transition: var(--transition-smooth); z-index: 20; display: flex; align-items: center; justify-content: center; }
-        .deck-pile:hover { transform: translateY(-5px) scale(1.05); box-shadow: -4px 4px 0 #222, -8px 8px 0 #111, -12px 12px 0 #000, -20px 25px 50px rgba(255,204,0,0.5); border-color: var(--card-yellow); }
-        .deck-pile .uno-logo { font-size: 2.2rem; font-weight: 900; color: var(--card-red); text-shadow: 2px 2px 0 #fff; transform: rotate(-20deg); }
-        .deck-pile::after { content: ''; position: absolute; top: 6%; left: 6%; right: 6%; bottom: 6%; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: radial-gradient(circle, #ff3b30 0%, #660000 100%); z-index: -1; }
+        body.dark-side-active .deck-pile { border-color: #222; box-shadow: -4px 4px 0 #111, -8px 8px 0 #050505, -12px 12px 0 #000, -20px 20px 40px rgba(255,42,133,0.3); }
+        .deck-pile:hover { transform: translateY(-5px) scale(1.05); }
+        .deck-pile .uno-logo { font-size: 2.2rem; font-weight: 900; color: var(--card-red); text-shadow: 2px 2px 0 #fff; transform: rotate(-20deg); transition: all 0.4s ease; }
+        body.dark-side-active .deck-pile .uno-logo { color: var(--card-orange); text-shadow: 2px 2px 0 #222; }
+        .deck-pile::after { content: ''; position: absolute; top: 6%; left: 6%; right: 6%; bottom: 6%; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: radial-gradient(circle, #ff3b30 0%, #660000 100%); z-index: -1; transition: all 0.4s ease; }
+        body.dark-side-active .deck-pile::after { border-color: rgba(0,0,0,0.5); background: radial-gradient(circle, #ff8c00 0%, #663300 100%); }
 
         .discard-wrapper { position: relative; width: 120px; height: 180px; display: flex; align-items: center; justify-content: center; }
         .discard-pile { width: 120px; height: 180px; position: absolute; }
 
-        /* DIGITAL TURN TIMER (CENTERED) */
+        /* DIGITAL TURN TIMER */
         .timer-hud { position: absolute; top: -70px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.1); padding: 8px 24px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(10px); transition: var(--transition-smooth); }
         .timer-hud.danger { border-color: var(--card-red); box-shadow: 0 0 25px rgba(255,59,48,0.5); animation: pulseDanger 1s infinite alternate; }
         .timer-text { font-size: 2rem; font-weight: 900; color: var(--card-green); letter-spacing: 2px; }
         .timer-hud.danger .timer-text { color: var(--card-red); }
-        
         @keyframes pulseDanger { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.1); } }
 
         /* ORBITAL PICKER */
         .orbital-picker { position: absolute; width: 300px; height: 300px; z-index: 200; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transform: scale(0.3) rotate(-90deg); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .orbital-picker.active { pointer-events: auto; opacity: 1; transform: scale(1) rotate(0deg); }
         .orbital-node { position: absolute; width: 65px; height: 65px; border-radius: 50%; border: 4px solid white; cursor: pointer; transition: var(--transition-smooth); box-shadow: 0 10px 25px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; }
+        body.dark-side-active .orbital-node { border-color: #222; }
         .orbital-node:hover { transform: scale(1.3); box-shadow: 0 0 30px currentColor; z-index: 210; }
-        .node-red { top: 0; left: 117.5px; background: var(--card-red); color: var(--card-red); }
-        .node-blue { top: 117.5px; right: 0; background: var(--card-blue); color: var(--card-blue); }
-        .node-yellow { bottom: 0; left: 117.5px; background: var(--card-yellow); color: var(--card-yellow); }
-        .node-green { top: 117.5px; left: 0; background: var(--card-green); color: var(--card-green); }
+        
+        /* Dynamic Picker Nodes handled via JS */
 
-        /* SIDE PANEL (State Indicators) */
+        /* SIDE PANEL */
         .side-panel { position: absolute; right: 5%; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; align-items: center; background: rgba(0,0,0,0.5); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 40px rgba(0,0,0,0.6); backdrop-filter: blur(10px); }
         .color-indicator { width: 55px; height: 55px; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 25px rgba(255,255,255,0.3); transition: var(--transition-smooth); }
+        body.dark-side-active .color-indicator { border-color: #222; }
+        
         .direction-indicator { font-size: 2rem; color: rgba(255,255,255,0.6); animation: spinPulse 3s infinite ease-in-out; }
 
         .stack-indicator { font-size: 1.4rem; font-weight: 900; color: #fff; background: var(--card-red); padding: 10px 20px; border-radius: 14px; border: 3px solid #fff; animation: pulseStack 0.8s infinite alternate; text-align: center; box-shadow: 0 0 20px rgba(255, 59, 48, 0.8); }
+        body.dark-side-active .stack-indicator { background: var(--card-purple); border-color: #222; box-shadow: 0 0 20px rgba(138, 43, 226, 0.8); }
+        
         .btn-pass { background: var(--card-red); font-size: 1rem; padding: 14px 24px; box-shadow: 0 5px 20px rgba(255,59,48,0.5); margin-bottom: 0; }
         .btn-pass:hover { box-shadow: 0 10px 30px rgba(255,59,48,0.8); background: #ff5045; }
 
         @keyframes spinPulse { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; } 50% { transform: scale(1.2) rotate(180deg); opacity: 1; color: var(--card-yellow); } }
-        @keyframes pulseStack { from { transform: scale(1); } to { transform: scale(1.15); box-shadow: 0 0 35px rgba(255, 59, 48, 1); } }
+        @keyframes pulseStack { from { transform: scale(1); } to { transform: scale(1.15); box-shadow: 0 0 35px currentColor; } }
 
         .status-msg { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); color: var(--card-yellow); font-weight: 600; }
+        
+        /* EPIC FLIP ANIMATION */
+        @keyframes epicBoardFlash {
+            0% { filter: invert(0) brightness(1); }
+            50% { filter: invert(1) brightness(3) hue-rotate(90deg); }
+            100% { filter: invert(0) brightness(1); }
+        }
+        .flash-active { animation: epicBoardFlash 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
 </head>
 <body>
@@ -152,14 +198,14 @@
             <h1>UNO Ultimate</h1>
             <p style="margin-bottom: 25px; opacity: 0.8; font-weight: 600;">Select a game edition to begin match setup.</p>
             <div class="series-grid">
-                <div class="series-card" onclick="transitionScreen('menu-screen', 'lobby-screen')">
+                <div class="series-card" onclick="selectGameMode('classic')">
                     <h3 style="font-size: 1.4rem;">Classic UNO <span style="font-size: 0.8rem; color: var(--card-yellow); vertical-align: middle;">+ STACK RULES</span></h3>
                     <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 8px;">The standard 108-card deck fully equipped with dynamic chaining and stacking modifiers.</p>
                 </div>
-                <div class="series-card locked">
-                    <span class="badge">COMING SOON</span>
+                <div class="series-card flip-edition" onclick="selectGameMode('flip')">
+                    <span class="badge active-badge">NEW</span>
                     <h3 style="font-size: 1.4rem;">UNO Flip!</h3>
-                    <p style="font-size: 0.9rem; opacity: 0.5; margin-top: 8px;">Double-sided decks with intense action mechanics.</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 8px;">Double-sided decks with Light/Dark mechanics. Get ready for extreme chaos.</p>
                 </div>
             </div>
         </div>
@@ -168,7 +214,7 @@
     <div id="lobby-screen" class="screen hidden">
         <div class="glass-panel">
             <h2 style="font-size: 2rem; font-weight: 800;">Multiplayer Setup</h2>
-            <p style="margin-top: 5px; opacity: 0.7; font-size: 0.9rem; font-weight: 600;">Powered via PeerJS P2P Synchronization</p>
+            <p id="lobby-mode-text" style="margin-top: 5px; opacity: 0.7; font-size: 0.9rem; font-weight: 600; color: var(--card-yellow);">MODE: CLASSIC</p>
             
             <div id="host-controls">
                 <div class="code-display" id="room-code-display">----</div>
@@ -211,11 +257,7 @@
                 <div class="discard-pile" id="discard-pile-target"></div>
                 
                 <div class="orbital-picker" id="inline-orbital-picker">
-                    <div class="orbital-node node-red" onclick="selectWildColor('red')"></div>
-                    <div class="orbital-node node-blue" onclick="selectWildColor('blue')"></div>
-                    <div class="orbital-node node-yellow" onclick="selectWildColor('yellow')"></div>
-                    <div class="orbital-node node-green" onclick="selectWildColor('green')"></div>
-                </div>
+                    </div>
             </div>
 
             <div class="side-panel">
@@ -242,6 +284,7 @@
         let conn = null;
         let isHost = false;
         let roomCode = '';
+        let selectedGameMode = 'classic';
         
         let turnTimer = null;
         let timeLeft = 15;
@@ -250,7 +293,9 @@
         
         /* CORE REPLICATED STATE OBJECT */
         let gameState = {
-            status: 'lobby', // 'lobby', 'playing', 'game_over'
+            status: 'lobby', 
+            mode: 'classic', 
+            isDarkSide: false,
             winner: null,
             deck: [],
             discardPile: [],
@@ -266,9 +311,17 @@
             drawnCardId: null
         };
 
-        const colors = ['red', 'blue', 'yellow', 'green'];
+        const lightColors = ['red', 'blue', 'yellow', 'green'];
+        const darkColors = ['teal', 'pink', 'orange', 'purple'];
 
         window.onload = function() { initPeerConnection(); };
+
+        function selectGameMode(mode) {
+            selectedGameMode = mode;
+            document.getElementById('lobby-mode-text').innerText = `MODE: ${mode === 'flip' ? 'UNO FLIP!' : 'CLASSIC UNO'}`;
+            document.getElementById('lobby-mode-text').style.color = mode === 'flip' ? 'var(--card-pink)' : 'var(--card-yellow)';
+            transitionScreen('menu-screen', 'lobby-screen');
+        }
 
         function transitionScreen(from, to) {
             document.getElementById(from).classList.add('hidden');
@@ -341,7 +394,6 @@
                 roomCode = codeInput;
                 setupDataChannel();
                 updateLobbyStatus("Connected successfully! Syncing board data...");
-                transitionScreen('lobby-screen', 'game-screen');
             });
             conn.on('error', (err) => {
                 showToast("Failed to establish a valid P2P match connection.");
@@ -353,7 +405,14 @@
         function setupDataChannel() {
             conn.on('data', (data) => {
                 if(data.type === 'STATE_UPDATE') {
+                    // Check if a flip just occurred to trigger animation
+                    if(data.payload.mode === 'flip' && data.payload.isDarkSide !== gameState.isDarkSide && gameState.status === 'playing') {
+                        triggerEpicFlipAnimation();
+                    }
                     gameState = data.payload;
+                    if(document.getElementById('lobby-screen').className !== 'screen hidden') {
+                        transitionScreen('lobby-screen', 'game-screen');
+                    }
                     renderGameBoard();
                 }
             });
@@ -368,28 +427,66 @@
             renderGameBoard();
         }
 
+        function triggerEpicFlipAnimation() {
+            document.body.classList.add('flash-active');
+            setTimeout(() => { document.body.classList.remove('flash-active'); }, 800);
+        }
+
+        /* DECK GENERATORS */
+        function generateDeck() {
+            let deck = [];
+            let idCount = 0;
+            
+            if(selectedGameMode === 'classic') {
+                for(let c=0; c<4; c++) {
+                    let color = lightColors[c];
+                    deck.push({ id: `c${idCount++}`, light: {color, value: '0'}, dark: {color, value: '0'} });
+                    for(let i=1; i<=9; i++) {
+                        deck.push({ id: `c${idCount++}`, light: {color, value: i.toString()}, dark: {color, value: i.toString()} });
+                        deck.push({ id: `c${idCount++}`, light: {color, value: i.toString()}, dark: {color, value: i.toString()} });
+                    }
+                    ['Skip', 'Reverse', 'Draw2'].forEach(act => {
+                        deck.push({ id: `c${idCount++}`, light: {color, value: act}, dark: {color, value: act} });
+                        deck.push({ id: `c${idCount++}`, light: {color, value: act}, dark: {color, value: act} });
+                    });
+                }
+                for(let i=0; i<4; i++) {
+                    deck.push({ id: `c${idCount++}`, light: {color: 'wild', value: 'Wild'}, dark: {color: 'wild', value: 'Wild'} });
+                    deck.push({ id: `c${idCount++}`, light: {color: 'wild', value: 'Draw4'}, dark: {color: 'wild', value: 'Draw4'} });
+                }
+            } else {
+                // FLIP DECK
+                for(let c=0; c<4; c++) {
+                    let lColor = lightColors[c];
+                    let dColor = darkColors[c];
+                    
+                    for(let i=1; i<=9; i++) {
+                        deck.push({ id: `c${idCount++}`, light: {color: lColor, value: i.toString()}, dark: {color: dColor, value: i.toString()} });
+                        deck.push({ id: `c${idCount++}`, light: {color: lColor, value: i.toString()}, dark: {color: dColor, value: i.toString()} });
+                    }
+                    ['Draw1', 'Skip', 'Reverse', 'Flip'].forEach(act => {
+                        let dAct = act === 'Draw1' ? 'Draw5' : (act === 'Skip' ? 'SkipAll' : act);
+                        deck.push({ id: `c${idCount++}`, light: {color: lColor, value: act}, dark: {color: dColor, value: dAct} });
+                        deck.push({ id: `c${idCount++}`, light: {color: lColor, value: act}, dark: {color: dColor, value: dAct} });
+                    });
+                }
+                for(let i=0; i<4; i++) {
+                    deck.push({ id: `c${idCount++}`, light: {color: 'wild', value: 'Wild'}, dark: {color: 'wild', value: 'Wild'} });
+                    deck.push({ id: `c${idCount++}`, light: {color: 'wild', value: 'Draw2'}, dark: {color: 'wild', value: 'DrawColor'} });
+                }
+            }
+            return deck;
+        }
+
         /* UNO MECHANICS ENGINE */
         function startMatch() {
             if(!isHost) return;
 
-            gameState.deck = [];
-            for(let color of colors) {
-                gameState.deck.push({ id: crypto.randomUUID(), color, value: '0' });
-                for(let i = 1; i <= 9; i++) {
-                    gameState.deck.push({ id: crypto.randomUUID(), color, value: i.toString() });
-                    gameState.deck.push({ id: crypto.randomUUID(), color, value: i.toString() });
-                }
-                for(let act of ['Skip', 'Reverse', 'Draw2']) {
-                    gameState.deck.push({ id: crypto.randomUUID(), color, value: act });
-                    gameState.deck.push({ id: crypto.randomUUID(), color, value: act });
-                }
-            }
-            for(let i = 0; i < 4; i++) {
-                gameState.deck.push({ id: crypto.randomUUID(), color: 'wild', value: 'Wild' });
-                gameState.deck.push({ id: crypto.randomUUID(), color: 'wild', value: 'Draw4' });
-            }
-
+            gameState.mode = selectedGameMode;
+            gameState.isDarkSide = false;
+            gameState.deck = generateDeck();
             shuffle(gameState.deck);
+            
             gameState.playerHand = [];
             gameState.opponentHand = [];
             
@@ -399,14 +496,16 @@
             }
 
             let topCard = gameState.deck.pop();
-            while(topCard.color === 'wild' || topCard.value === 'Draw2' || topCard.value === 'Skip' || topCard.value === 'Reverse') {
+            let face = gameState.isDarkSide ? topCard.dark : topCard.light;
+            while(face.color === 'wild' || face.value.includes('Draw') || face.value === 'Skip' || face.value === 'Reverse' || face.value === 'Flip' || face.value === 'SkipAll') {
                 gameState.deck.unshift(topCard);
                 topCard = gameState.deck.pop();
+                face = gameState.isDarkSide ? topCard.dark : topCard.light;
             }
             
             gameState.discardPile.push(topCard);
-            gameState.currentColor = topCard.color;
-            gameState.currentValue = topCard.value;
+            gameState.currentColor = face.color;
+            gameState.currentValue = face.value;
             gameState.activeTurn = 'host';
             gameState.turnId = 1;
             gameState.stackCount = 0;
@@ -436,19 +535,29 @@
         /* CARD COMPONENT DOM GENERATOR */
         function createDOMCardElement(card, isInteractive) {
             const cardNode = document.createElement('div');
-            cardNode.className = `uno-card ${card.color}`;
+            
+            const face = gameState.isDarkSide ? card.dark : card.light;
+            cardNode.className = `uno-card ${face.color}`;
             cardNode.id = card.id;
             
-            let displayVal = card.value;
-            if(card.value === 'Skip') displayVal = '🚫';
-            if(card.value === 'Reverse') displayVal = '⇄';
-            if(card.value === 'Draw2') displayVal = '+2';
-            if(card.value === 'Draw4') displayVal = '+4';
-            if(card.value === 'Wild') displayVal = 'W';
+            let displayVal = face.value;
+            if(displayVal === 'Skip' || displayVal === 'SkipAll') displayVal = '🚫';
+            if(displayVal === 'Reverse') displayVal = '⇄';
+            if(displayVal === 'Draw1') displayVal = '+1';
+            if(displayVal === 'Draw2') displayVal = '+2';
+            if(displayVal === 'Draw4') displayVal = '+4';
+            if(displayVal === 'Draw5') displayVal = '+5';
+            if(displayVal === 'DrawColor') displayVal = '+🎨';
+            if(displayVal === 'Wild') displayVal = 'W';
+            if(displayVal === 'Flip') displayVal = '☯';
 
-            if(card.color === 'wild') {
+            if(face.color === 'wild') {
+                let quads = gameState.isDarkSide 
+                    ? `<div class="w-quad teal"></div><div class="w-quad pink"></div><div class="w-quad orange"></div><div class="w-quad purple"></div>`
+                    : `<div class="w-quad red"></div><div class="w-quad blue"></div><div class="w-quad yellow"></div><div class="w-quad green"></div>`;
+                
                 cardNode.innerHTML = `
-                    <div class="card-inner"><div class="wild-inner"><div class="w-quad red"></div><div class="w-quad blue"></div><div class="w-quad yellow"></div><div class="w-quad green"></div></div></div>
+                    <div class="card-inner"><div class="wild-inner">${quads}</div></div>
                     <div class="card-corner top-left">${displayVal}</div><div class="card-corner bottom-right">${displayVal}</div>
                 `;
             } else {
@@ -460,7 +569,6 @@
 
             if(isInteractive && gameState.status === 'playing') {
                 cardNode.onclick = () => handleCardPlayAttempt(card);
-                
                 if (gameState.hasDrawnThisTurn && card.id === gameState.drawnCardId) {
                     cardNode.classList.add('valid-highlight');
                 }
@@ -468,7 +576,7 @@
             return cardNode;
         }
 
-        /* AAA FAN LAYOUT ENGINE */
+        /* AAA OVERHAULED FAN LAYOUT ENGINE */
         function layoutHandFan(containerId, cardsArray, isOpponent) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
@@ -476,11 +584,12 @@
             const total = cardsArray.length;
             if(total === 0) return;
 
-            // Calculate exact fan angles
-            const maxAngle = 50; 
-            const arcAngle = Math.min(total * 6, maxAngle);
-            const startAngle = -arcAngle / 2;
-            const angleStep = total > 1 ? arcAngle / (total - 1) : 0;
+            // Upgraded horizontal spread mechanics preventing overlap clumping
+            const cardWidth = 110;
+            const maxHandWidth = 700; 
+            const baseOverlap = 45; 
+            const calculatedSpacing = Math.min(baseOverlap, maxHandWidth / total);
+            const totalWidth = calculatedSpacing * (total - 1);
 
             cardsArray.forEach((card, index) => {
                 let node;
@@ -493,24 +602,27 @@
                     node = createDOMCardElement(card, isMyTurn);
                 }
 
-                // Mathematics for a perfect fan layout
-                const angle = startAngle + (index * angleStep);
-                const radius = 400; 
-                const yOffset = radius - (radius * Math.cos(angle * Math.PI / 180));
-                
-                // If it's opponent, rotate 180 degrees so it faces down conceptually (but visually an arc facing us)
-                const finalRotation = isOpponent ? angle + 180 : angle;
-                const finalY = isOpponent ? -yOffset : yOffset;
+                // Smooth Parabolic Arc Math
+                const offsetFromCenter = index - (total - 1) / 2;
+                const xTranslate = offsetFromCenter * calculatedSpacing;
+                // Lift the center cards up slightly to form the arc
+                const yTranslate = Math.abs(offsetFromCenter) * Math.abs(offsetFromCenter) * 1.8; 
+                // Slight rotation
+                const rotation = offsetFromCenter * 3; 
 
-                node.style.transform = `rotate(${finalRotation}deg) translateY(${finalY}px)`;
+                const finalRotation = isOpponent ? rotation + 180 : rotation;
+                const finalY = isOpponent ? -yTranslate : yTranslate;
+
+                // Center origin ensures predictable behavior
+                node.style.transform = `translateX(${xTranslate}px) translateY(${finalY}px) rotate(${finalRotation}deg)`;
                 node.style.zIndex = index;
                 
-                // Allow dynamic hover scaling without breaking the arc transform
                 if(!isOpponent) {
-                    node.dataset.baseTransform = `rotate(${finalRotation}deg) translateY(${finalY}px)`;
+                    node.dataset.baseTransform = `translateX(${xTranslate}px) translateY(${finalY}px) rotate(${finalRotation}deg)`;
                     node.addEventListener('mouseenter', function() {
                         if(this.parentElement.classList.contains('interactive')) {
-                            this.style.transform = `${this.dataset.baseTransform} translateY(-30px) scale(1.15)`;
+                            // Pop out significantly when hovered
+                            this.style.transform = `translateX(${xTranslate}px) translateY(${finalY - 40}px) rotate(0deg) scale(1.15)`;
                         }
                     });
                     node.addEventListener('mouseleave', function() {
@@ -526,39 +638,44 @@
         function renderGameBoard() {
             if(gameState.status === 'game_over') {
                 checkWinCondition();
-                return; // Freeze board state
+                return;
             }
+
+            // Sync Dark Mode UI visually
+            if(gameState.isDarkSide) { document.body.classList.add('dark-side-active'); }
+            else { document.body.classList.remove('dark-side-active'); }
 
             const myHand = isHost ? gameState.playerHand : gameState.opponentHand;
             const theirHand = isHost ? gameState.opponentHand : gameState.playerHand;
             const isMyTurn = (isHost && gameState.activeTurn === 'host') || (!isHost && gameState.activeTurn === 'guest');
 
-            /* Check Win Condition First before Rendering turn timers */
             if(myHand.length === 0 || theirHand.length === 0) {
                 checkWinCondition();
                 if(gameState.status === 'game_over') return;
             }
 
-            /* Timer and Turn Sync */
             if(window.currentTurnId !== gameState.turnId) {
                 window.currentTurnId = gameState.turnId;
                 startTurnTimer();
             }
 
-            /* Render Fan Hands */
             layoutHandFan('player-hand', myHand, false);
             layoutHandFan('opponent-hand', theirHand, true);
 
-            /* Render Center Discard */
             const discardTarget = document.getElementById('discard-pile-target');
             discardTarget.innerHTML = '';
             if(gameState.discardPile.length > 0) {
                 const topDiscard = gameState.discardPile[gameState.discardPile.length - 1];
-                const discardNode = createDOMCardElement({ ...topDiscard, color: gameState.currentColor }, false);
+                // Force top card to render with current active color if it was wild
+                let clonedCard = JSON.parse(JSON.stringify(topDiscard));
+                if(gameState.isDarkSide) clonedCard.dark.color = gameState.currentColor;
+                else clonedCard.light.color = gameState.currentColor;
+                
+                const discardNode = createDOMCardElement(clonedCard, false);
+                discardNode.style.transform = 'rotate(0deg)'; // reset any fan transforms
                 discardTarget.appendChild(discardNode);
             }
 
-            /* UI State Bindings */
             document.getElementById('current-color-node').style.backgroundColor = `var(--card-${gameState.currentColor})`;
             document.getElementById('direction-node').style.transform = gameState.isReverse ? 'scaleX(-1)' : 'scaleX(1)';
 
@@ -652,8 +769,15 @@
             }
             
             if(pendingWildCard) {
-                gameState.currentColor = ['red','blue','yellow','green'][Math.floor(Math.random()*4)];
-                if(pendingWildCard.value === 'Draw4') gameState.stackCount += 4;
+                let cols = gameState.isDarkSide ? darkColors : lightColors;
+                gameState.currentColor = cols[Math.floor(Math.random()*4)];
+                
+                let pFace = gameState.isDarkSide ? pendingWildCard.dark : pendingWildCard.light;
+                if(pFace.value.includes('Draw')) {
+                    if(pFace.value === 'Draw4') gameState.stackCount += 4;
+                    if(pFace.value === 'Draw2') gameState.stackCount += 2;
+                    if(pFace.value === 'DrawColor') gameState.stackCount += 5; // Simplified to generic stack for reliability
+                }
                 pendingWildCard = null;
                 document.getElementById('inline-orbital-picker').classList.remove('active');
                 toggleTurn();
@@ -670,21 +794,23 @@
             const isMyTurn = (isHost && gameState.activeTurn === 'host') || (!isHost && gameState.activeTurn === 'guest');
             if(!isMyTurn) return;
 
+            const face = gameState.isDarkSide ? card.dark : card.light;
+
             if(gameState.hasDrawnThisTurn && card.id !== gameState.drawnCardId) {
                 return showToast("You can only play the card you just drew, or click PASS.");
             }
 
             if(gameState.stackCount > 0) {
                 let isValidStack = false;
-                if(card.value === 'Draw4') isValidStack = true;
-                if(card.value === 'Draw2' && card.color === gameState.currentColor) isValidStack = true;
-                if(card.value === 'Draw2' && gameState.currentValue === 'Draw2') isValidStack = true;
+                if(face.value.includes('Draw') && face.color === 'wild') isValidStack = true;
+                if(face.value.includes('Draw') && face.color === gameState.currentColor) isValidStack = true;
+                if(face.value === gameState.currentValue) isValidStack = true;
                 
                 if(!isValidStack) {
-                    return showToast(`Stack active (+${gameState.stackCount})! Play a +4 or matching +2, or draw.`);
+                    return showToast(`Stack active (+${gameState.stackCount})! Match the attack or draw.`);
                 }
             } else {
-                const isValidMove = (card.color === 'wild') || (card.color === gameState.currentColor) || (card.value === gameState.currentValue);
+                const isValidMove = (face.color === 'wild') || (face.color === gameState.currentColor) || (face.value === gameState.currentValue);
                 if(!isValidMove) return;
             }
 
@@ -696,18 +822,45 @@
             
             myHand.splice(targetIdx, 1);
             gameState.discardPile.push(card);
-            gameState.currentValue = card.value;
+            gameState.currentValue = face.value;
 
-            if(card.color === 'wild') {
+            if(face.color === 'wild') {
                 pendingWildCard = card;
+                injectOrbitalPickerNodes();
                 document.getElementById('inline-orbital-picker').classList.add('active');
-                renderGameBoard(); // Re-render to show card left hand, but DO NOT broadcast yet.
+                renderGameBoard();
             } else {
-                gameState.currentColor = card.color;
-                processActionCardRules(card.value);
+                gameState.currentColor = face.color;
+                processActionCardRules(face.value);
             }
             
             setTimeout(() => { isProcessingAction = false; }, 400);
+        }
+
+        function injectOrbitalPickerNodes() {
+            const picker = document.getElementById('inline-orbital-picker');
+            picker.innerHTML = '';
+            
+            const cols = gameState.isDarkSide ? darkColors : lightColors;
+            const positions = [
+                { top: '0', left: '117.5px' },
+                { top: '117.5px', right: '0' },
+                { bottom: '0', left: '117.5px' },
+                { top: '117.5px', left: '0' }
+            ];
+
+            cols.forEach((col, i) => {
+                const node = document.createElement('div');
+                node.className = `orbital-node ${col}`;
+                node.style.top = positions[i].top;
+                if(positions[i].left) node.style.left = positions[i].left;
+                if(positions[i].right) node.style.right = positions[i].right;
+                if(positions[i].bottom) node.style.bottom = positions[i].bottom;
+                
+                // Color node inline style to ensure exact hex matches our CSS classes
+                node.onclick = () => selectWildColor(col);
+                picker.appendChild(node);
+            });
         }
 
         function selectWildColor(color) {
@@ -717,8 +870,11 @@
             const wasPending = pendingWildCard;
             pendingWildCard = null;
 
-            if(wasPending && wasPending.value === 'Draw4') {
-                gameState.stackCount += 4;
+            if(wasPending) {
+                const pFace = gameState.isDarkSide ? wasPending.dark : wasPending.light;
+                if(pFace.value === 'Draw4') gameState.stackCount += 4;
+                else if(pFace.value === 'Draw2' && pFace.color === 'wild') gameState.stackCount += 2;
+                else if(pFace.value === 'DrawColor') gameState.stackCount += 5; // Simplified auto-draw for robust sync
                 toggleTurn();
             } else {
                 processActionCardRules(gameState.currentValue);
@@ -728,13 +884,35 @@
         }
 
         function processActionCardRules(value) {
-            if(value === 'Skip' || value === 'Reverse') {
+            if(value === 'Flip') {
+                gameState.isDarkSide = !gameState.isDarkSide;
+                triggerEpicFlipAnimation();
+                
+                // Update current top card color immediately based on new face
+                const topCard = gameState.discardPile[gameState.discardPile.length - 1];
+                const newFace = gameState.isDarkSide ? topCard.dark : topCard.light;
+                if(newFace.color !== 'wild') {
+                    gameState.currentColor = newFace.color;
+                    gameState.currentValue = newFace.value;
+                }
+                
+                gameState.hasDrawnThisTurn = false;
+                toggleTurn();
+            } else if(value === 'Skip' || value === 'SkipAll' || value === 'Reverse') {
                 if(value === 'Reverse') gameState.isReverse = !gameState.isReverse;
                 gameState.turnId++; 
                 gameState.hasDrawnThisTurn = false;
                 showToast("Action applied! You get another turn.");
-            } else if(value === 'Draw2') {
+            } else if(value === 'Draw1') {
+                gameState.stackCount += 1;
+                gameState.hasDrawnThisTurn = false;
+                toggleTurn();
+            } else if(value === 'Draw2' && gameState.currentColor !== 'wild') {
                 gameState.stackCount += 2;
+                gameState.hasDrawnThisTurn = false;
+                toggleTurn();
+            } else if(value === 'Draw5') {
+                gameState.stackCount += 5;
                 gameState.hasDrawnThisTurn = false;
                 toggleTurn();
             } else {
@@ -775,7 +953,8 @@
                 gameState.hasDrawnThisTurn = true;
                 gameState.drawnCardId = drawnCard.id;
                 
-                let canPlay = (drawnCard.color === 'wild') || (drawnCard.color === gameState.currentColor) || (drawnCard.value === gameState.currentValue);
+                const dFace = gameState.isDarkSide ? drawnCard.dark : drawnCard.light;
+                let canPlay = (dFace.color === 'wild') || (dFace.color === gameState.currentColor) || (dFace.value === gameState.currentValue);
                 
                 if (canPlay) {
                     showToast("Card is playable! Play it or click PASS TURN.");
@@ -804,7 +983,6 @@
             gameState.turnId++;
         }
 
-        /* STRICT WIN CONDITION LOCK */
         function checkWinCondition() {
             if(gameState.status === 'game_over') {
                 const amIWinner = (isHost && gameState.winner === 'host') || (!isHost && gameState.winner === 'guest');
@@ -822,7 +1000,6 @@
 
             if(gameState.status === 'game_over') {
                 clearInterval(turnTimer);
-                // Broadcast final state lock to opponent immediately
                 if(conn && conn.open) conn.send({ type: 'STATE_UPDATE', payload: gameState });
                 
                 const amIWinner = (isHost && gameState.winner === 'host') || (!isHost && gameState.winner === 'guest');
